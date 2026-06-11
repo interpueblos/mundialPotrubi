@@ -4,8 +4,8 @@
    ============================================================ */
 
 const DATA_SRC = 'https://raw.githubusercontent.com/openfootball/worldcup.json/refs/heads/master/2026';
-const LEADERBOARD_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSDwcurPFZ1PgxTQ_o_D4D4Xjboy1lUrU711uWdLIKXVnWofbf_CwGEeaTL0VaLAX7SOHlRYBCuybu_/pub?gid=1132102352&single=true&output=csv'
-const FORM_ID = '1FAIpQLSd9OPSO4JwC6aDS0dtN9FkpmIiCCijgQztklxLC410HTgvjUg';
+const LEADERBOARD_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQml9Ri48f5T6BBttDk5oWiHUV8AbW6ia2fHHbuez_nO5LgBu9y4kM3b_E-rmTUm8FEzP_xWGu_Y46Q/pub?output=csv'
+const FORM_ID = '19Gsj3j3RaKKmiPdTS-fmIbkCTTx7_AOs7K1V2CbeBMo';
 const ENTRY_ID = 'entry.479239932';
 
 const puntuaciones = {
@@ -4838,10 +4838,10 @@ function updateSubmitButton() {
   }
 
   // El plazo de envío de quinielas ha cerrado — botón siempre deshabilitado.
-  btn.disabled = true;
-  hint.innerHTML = '<strong>🔒 El plazo de envío de quinielas ha cerrado. ¡Ya no se aceptan apuestas!</strong>';
-  hint.style.display = '';
-  btn.setAttribute('aria-describedby', 'submitHint');
+  //btn.disabled = true;
+  //hint.innerHTML = '<strong>🔒 El plazo de envío de quinielas ha cerrado. ¡Ya no se aceptan apuestas!</strong>';
+  //hint.style.display = '';
+  //btn.setAttribute('aria-describedby', 'submitHint');
 }
 
 function submitPrediction() {
