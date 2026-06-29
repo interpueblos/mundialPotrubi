@@ -24,33 +24,58 @@
 const RESULTS = {
   // Orden final de cada grupo: 1º, 2º, 3º, 4º.
   groups: {
-    A: [],
-    B: [],
-    C: [],
-    D: [],
-    E: [],
-    F: [],
-    G: [],
-    H: [],
-    I: [],
-    J: [],
-    K: [],
-    L: []
+    A: ["México", "Sudáfrica", "Corea del Sur", "República Checa"],
+    B: ["Suiza", "Canadá", "Bosnia y Herzegovina", "Catar"],
+    C: ["Brasil", "Marruecos", "Escocia", "Haití"],
+    D: ["Estados Unidos", "Australia", "Paraguay", "Turquía"],
+    E: ["Alemania", "Costa de Marfil", "Ecuador", "Curazao"],
+    F: ["Países Bajos", "Japón", "Suecia", "Túnez"],
+    G: ["Bélgica", "Egipto", "Irán", "Nueva Zelanda"],
+    H: ["España", "Cabo Verde", "Uruguay", "Arabia Saudí"],
+    I: ["Francia", "Noruega", "Senegal", "Irak"],
+    J: ["Argentina", "Austria", "Argelia", "Jordania"],
+    K: ["Colombia", "Portugal", "RD del Congo", "Uzbekistán"],
+    L: ["Inglaterra", "Croacia", "Ghana", "Panamá"]
   },
 
   // Los 8 mejores terceros que clasifican a dieciseisavos,
   // en orden (1º mejor tercero → 8º mejor tercero).
-  thirdPlace: [],
+  thirdPlace: [
+    "RD del Congo",     // 4 pts, DG +1
+    "Suecia",           // 4 pts, DG  0, 7 GF
+    "Ecuador",          // 4 pts, DG  0, 2 GF
+    "Ghana",            // 4 pts, DG  0, 2 GF
+    "Bosnia y Herzegovina", // 4 pts, DG -1
+    "Argelia",          // 4 pts, DG -2, 5 GF
+    "Paraguay",         // 4 pts, DG -2, 2 GF
+    "Senegal"           // 3 pts
+  ],
 
   // Quiniela 1X2 — resultados reales de los 3 partidos fijos.
   // Valores admitidos: "1" (gana team1), "X" (empate), "2" (gana team2).
   // Las claves coinciden con `[team1, team2].sort().join('__')` definido en
   // QUINIELA_1X2_MATCHES dentro de app.js. Dejar "" mientras el partido no
   // se haya jugado.
-  quiniela1x2: {},
+  quiniela1x2: {
+    "Corea del Sur__México": "1",
+    "Escocia__Marruecos":    "2",
+    "España__Uruguay":       "2"
+  },
 
   knockout: {
-    round32: [],
+    round32: [
+      // 12 primeros clasificados
+      "México", "Suiza", "Brasil", "Estados Unidos",
+      "Alemania", "Países Bajos", "Bélgica", "España",
+      "Francia", "Argentina", "Colombia", "Inglaterra",
+      // 12 segundos clasificados
+      "Sudáfrica", "Canadá", "Marruecos", "Australia",
+      "Costa de Marfil", "Japón", "Egipto", "Cabo Verde",
+      "Noruega", "Austria", "Portugal", "Croacia",
+      // 8 mejores terceros
+      "Bosnia y Herzegovina", "Paraguay", "Ecuador", "Suecia",
+      "Senegal", "Argelia", "RD del Congo", "Ghana"
+    ],
     round16: [],
     quarterfinals: [],
     semifinals: [],
