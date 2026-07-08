@@ -4,9 +4,9 @@
    ============================================================ */
 
 const DATA_SRC = 'https://raw.githubusercontent.com/openfootball/worldcup.json/refs/heads/master/2026';
-const LEADERBOARD_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSaqCb0vWOkM7mgbaayuskf8L0GsgZtA_bW_NoZ3xdAnywn4BcuyJ-hZQhSlE1c8nBJrGYG22DLUJZs/pub?output=csv'
-const FORM_ID = '1FAIpQLSe8-A-yb0Qcb4rjAonFYSMMLm1A9ZMlp3Jp0fnUTch3wFPMlQ';
-const ENTRY_ID = 'entry.1431980020';
+const LEADERBOARD_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSDwcurPFZ1PgxTQ_o_D4D4Xjboy1lUrU711uWdLIKXVnWofbf_CwGEeaTL0VaLAX7SOHlRYBCuybu_/pub?gid=1132102352&single=true&output=csv'
+const FORM_ID = '1FAIpQLSd9OPSO4JwC6aDS0dtN9FkpmIiCCijgQztklxLC410HTgvjUg';
+const ENTRY_ID = 'entry.479239932';
 
 const puntuaciones = {
   grupos: {
@@ -20,7 +20,7 @@ const puntuaciones = {
   },
   quiniela1x2: 1,
   eliminatorias: {
-    round32: 0,
+    round32: 2,
     round16: 5,
     quarterfinals: 5,
     semifinals: 10,
@@ -1890,8 +1890,8 @@ async function loadData() {
         {num:88,slot1:{type:'runner_up',group:'D'},slot2:{type:'runner_up',group:'G'}}
       ],
       round16: [
-        {num:89,slot1:{type:'winner_of',matchNum:73},slot2:{type:'winner_of',matchNum:75}},
-        {num:90,slot1:{type:'winner_of',matchNum:74},slot2:{type:'winner_of',matchNum:77}},
+        {num:89,slot1:{type:'winner_of',matchNum:74},slot2:{type:'winner_of',matchNum:77}},
+        {num:90,slot1:{type:'winner_of',matchNum:73},slot2:{type:'winner_of',matchNum:75}},
         {num:91,slot1:{type:'winner_of',matchNum:76},slot2:{type:'winner_of',matchNum:78}},
         {num:92,slot1:{type:'winner_of',matchNum:79},slot2:{type:'winner_of',matchNum:80}},
         {num:93,slot1:{type:'winner_of',matchNum:83},slot2:{type:'winner_of',matchNum:84}},
@@ -3858,6 +3858,55 @@ function closePredictionModal() {
 }
 
 
+function hasAnyRealKnockoutMatch() {
+  const ko = RESULTS?.knockout || {};
+  const matches = ko.matches || {};
+  const rounds = ['round32','round16','quarterfinals','semifinals','thirdPlace','final'];
+
+  // New payload format: explicit match objects in knockout.matches
+  if (rounds.some(round => Array.isArray(matches[round]) && matches[round].some(m => m && (m.team1 || m.team2 || m.winner)))) {
+    return true;
+  }
+
+  // Legacy payload format: winners stored directly on knockout.*
+  const winnerRounds = ['round32','round16','quarterfinals','semifinals'];
+  if (winnerRounds.some(round => Array.isArray(ko[round]) && ko[round].some(Boolean))) return true;
+  if (ko.final || ko.champion || RESULTS?.champion) return true;
+  if (ko.thirdPlace || ko.thirdPlaceWinner || RESULTS?.thirdPlaceWinner) return true;
+
+  return false;
+}
+
+function openRealBracketModal() {
+  const modal = document.getElementById('predictionModal');
+  const viewer = document.getElementById('predictionViewer');
+
+  modal.style.display = 'flex';
+  viewer.innerHTML = `
+    <div class="real-bracket-view">
+      <h3>🥊 Cuadro real del Mundial 2026</h3>
+      <p class="note-text">Así va el bracket oficial según los resultados ya confirmados. Lo que aún no se ha jugado aparecerá vacío.</p>
+      <div class="real-bracket-container" id="realBracketContainer"></div>
+    </div>
+  `;
+
+  const container = viewer.querySelector('#realBracketContainer');
+
+  if (!hasAnyRealKnockoutMatch()) {
+    container.innerHTML = '<p class="note-text real-bracket-empty">Todavía no hay ningún partido de eliminatorias jugado. Vuelve cuando empiecen los dieciseisavos.</p>';
+    return;
+  }
+
+  const realState = buildKnockoutReviewState(RESULTS);
+  const pane = document.createElement('div');
+  pane.className = 'bracket-wrapper review-knockout-pane';
+  const bracket = renderKnockoutBracket(realState, '', {
+    extraClass: 'review-knockout-real'
+  });
+  pane.appendChild(bracket);
+  container.appendChild(pane);
+}
+
 function openScoringHelpModal() {
   const modal = document.getElementById('predictionModal');
   const viewer = document.getElementById('predictionViewer');
@@ -3881,6 +3930,7 @@ function openScoringHelpModal() {
         <div class="scoring-help-card">
           <h4>🥊 Eliminatorias</h4>
           <ul>
+            <li>Equipo en dieciseisavos: <strong>${puntuaciones.eliminatorias.round32} pts</strong></li>
             <li>Equipo en octavos: <strong>${puntuaciones.eliminatorias.round16} pts</strong></li>
             <li>Equipo en cuartos: <strong>${puntuaciones.eliminatorias.quarterfinals} pts</strong></li>
             <li>Equipo en semifinales: <strong>${puntuaciones.eliminatorias.semifinals} pts</strong></li>
@@ -4204,15 +4254,19 @@ function buildKnockoutReviewState(source) {
   function applyRound(roundName, treeRound) {
     const explicitMatches = knockout.matches?.[roundName];
 
-    // New payload format: use the official match number as source of truth.
-    // This is important for the leaderboard review because the real bracket may
-    // not be reproducible from the predicted group path. If results.js says
-    // match 101 is Portugal vs Norway, the popup/bracket for match 101 must show
-    // exactly that, regardless of what the computed bracket path would produce.
     if (Array.isArray(explicitMatches)) {
-      explicitMatches.forEach(setExplicitMatch);
+      // New payload format: only collect winners into knockoutResults.
+      // matchTeams will be (re)derived in a single computeMatchTeams() call after
+      // all rounds are processed, so stale stored team names are never applied.
+      explicitMatches.forEach(item => {
+        if (!item || item.match === undefined || item.match === null) return;
+        const matchNum = Number(item.match);
+        if (!Number.isFinite(matchNum)) return;
+        if (item.winner) state.knockoutResults[matchNum] = item.winner;
+      });
       return;
     }
+
 
     // Legacy payload format: only winner arrays, so we infer the match by team.
     const winners = knockout[roundName] || [];
@@ -4232,6 +4286,11 @@ function buildKnockoutReviewState(source) {
   applyRound('thirdPlace', KO_TREE.thirdPlace || []);
   applyRound('final', KO_TREE.final || []);
 
+  // For new-format payloads: now that all winners are in knockoutResults, recompute
+  // matchTeams in one pass. computeMatchTeams() uses knockoutResults[prevMatch] to
+  // resolve each round's slots, so R16 teams come from R32 winners, QF from R16, etc.
+  if (knockout.matches) computeMatchTeams();
+   
   // Legacy fallbacks for old results/predictions without knockout.matches.final
   // or knockout.matches.thirdPlace.
   if (KO_TREE.final?.[0] && !state.knockoutResults[KO_TREE.final[0].num]) {
@@ -4514,11 +4573,17 @@ function renderKnockoutBracket(reviewState, titleText, options = {}) {
 function renderReviewKnockout(prediction) {
   const container = document.getElementById('reviewKnockout');
   container.className = 'review-knockout-click-section';
+  const hasRealBracket = hasAnyRealKnockoutMatch();
   container.innerHTML = `
     <div class="review-knockout-header">
       <div>
         <h4 class="group-modal-section-title"><span>🏆</span> ELIMINATORIAS: APOSTADO VS REAL</h4>
         <p class="note-text review-knockout-note">Haz click en un partido para comparar el cruce esperado con el cruce real, cuando ese partido real ya exista.</p>
+      </div>
+      <div class="review-knockout-toggle-wrap">
+        <button type="button" class="toolbar-btn review-knockout-toggle" id="toggleRealBracketBtn"${hasRealBracket ? '' : ' disabled'}>
+          ${hasRealBracket ? '🥊 Mostrar cuadro real junto al tuyo' : '🥊 Todavía no hay partidos reales'}
+        </button>
       </div>
     </div>
   `;
@@ -4626,6 +4691,31 @@ function renderReviewKnockout(prediction) {
 
   pane.appendChild(predictedBracket);
   container.appendChild(pane);
+
+  const realPane = document.createElement('div');
+  realPane.className = 'bracket-wrapper review-knockout-pane review-knockout-real-pane';
+  realPane.style.display = 'none';
+  container.appendChild(realPane);
+
+  const toggleBtn = container.querySelector('#toggleRealBracketBtn');
+  if (toggleBtn && hasRealBracket) {
+    let shown = false;
+    let realBracketRendered = false;
+    toggleBtn.addEventListener('click', () => {
+      shown = !shown;
+      if (shown && !realBracketRendered) {
+        const realBracketEl = renderKnockoutBracket(realState, 'Cuadro real', {
+          extraClass: 'review-knockout-real'
+        });
+        realPane.appendChild(realBracketEl);
+        realBracketRendered = true;
+      }
+      realPane.style.display = shown ? '' : 'none';
+      toggleBtn.textContent = shown
+        ? '🙈 Ocultar cuadro real'
+        : '🥊 Mostrar cuadro real junto al tuyo';
+    });
+  }
 }
 
 function renderReviewQuiniela1x2(prediction) {
@@ -4837,11 +4927,6 @@ function updateSubmitButton() {
     btn.removeAttribute('aria-describedby');
   }
 
-  // El plazo de envío de quinielas ha cerrado — botón siempre deshabilitado.
-  //btn.disabled = true;
-  //hint.innerHTML = '<strong>🔒 El plazo de envío de quinielas ha cerrado. ¡Ya no se aceptan apuestas!</strong>';
-  //hint.style.display = '';
-  //btn.setAttribute('aria-describedby', 'submitHint');
 }
 
 function submitPrediction() {
@@ -5029,6 +5114,10 @@ async function init() {
   const btnScoringHelp = document.getElementById('btnScoringHelp');
   if (btnScoringHelp) {
     btnScoringHelp.addEventListener('click', openScoringHelpModal);
+  }
+  const btnRealBracket = document.getElementById('btnRealBracket');
+  if (btnRealBracket) {
+    btnRealBracket.addEventListener('click', openRealBracketModal);
   }
   document.getElementById('btnSubmit').addEventListener('click', submitPrediction);
   document.getElementById('confirmNameSubmit').addEventListener('click', confirmSubmitPrediction);
