@@ -141,15 +141,27 @@ const RESULTS = {
         // Partido 96: W85 vs W87
         {match: 96, team1: "Suiza",          team2: "Colombia",  winner: "Suiza"}
       ],
-      quarterfinals: [],
-      semifinals: [],
-      thirdPlace: [],
-      final: []
+      quarterfinals: [
+        {match: 97, team1: "Marruecos",   team2: "Francia",      winner: "Francia"},
+        {match: 98, team1: "España",      team2: "Bélgica",      winner: "España"},
+        {match: 99, team1: "Noruega",     team2: "Inglaterra",   winner: "Inglaterra"},
+        {match: 100, team1: "Argentina",  team2: "Suiza",        winner: "Argentina"}
+      ],
+      semifinals: [
+        {match: 101, team1: "Francia",    team2: "España",     winner: "España"},
+        {match: 102, team1: "Inglaterra", team2: "Argentina",  winner: "Argentina"}
+      ],
+      thirdPlace: [
+        {match: 103, team1: "Francia", team2: "Inglaterra",  winner: null}
+      ],
+      final: [
+        {match: 104, team1: "España",  team2: "Argentina",   winner: null}
+      ]
     }
   },
 
-  semifinalists: [],
-  finalists: [],
+  semifinalists: ["España", "Argentina", "Francia", "Inglaterra"],
+  finalists: ["España", "Argentina"],
 
   champion: "",
   runnerUp: "",
